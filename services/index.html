@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>One-app release setup | Oluwatoyin Balogun</title>
+<meta name="description" content="An independent service pilot for one-app Docker Compose and GitHub Actions delivery. Explore a tested sample, release-check simulation and project enquiry.">
+<meta name="theme-color" content="#142b39"><link rel="icon" href="data:,">
+<link rel="canonical" href="https://tybies.github.io/services/">
+<link rel="stylesheet" href="../styles.css"><link rel="stylesheet" href="services.css">
+<script src="../script.js" defer></script><script src="services.js" defer></script>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap header-inner">
+<a class="brand" href="../"><span class="monogram" aria-hidden="true">OB</span><span>Oluwatoyin Balogun</span></a>
+<button class="menu-toggle" aria-expanded="false" aria-controls="navigation" hidden>Menu <span aria-hidden="true">+</span></button>
+<nav id="navigation" aria-label="Main navigation"><a href="../">Portfolio</a><a href="#scope">Scope</a><a href="#demo">Demo</a><a href="#enquiry">Project enquiry</a><a href="../de/" lang="de">Deutsch · Portfolio</a></nav>
+</div></header>
+<main id="main">
+<section class="hero" id="top"><div class="wrap hero-grid">
+<div><p class="eyebrow">Independent service pilot · Planned availability</p><h1>One app.<br>A clearer path<br>to <em>release.</em></h1><p class="intro">A scoped Docker Compose and GitHub Actions setup for a small application: repeatable builds, automated tests, a staging release and a documented way back.</p><div class="hero-actions"><a class="button button-light" href="#enquiry">Prepare a project enquiry ↗</a><a class="text-link" href="#demo">Explore the demonstration ↓</a></div></div>
+<aside class="focus-panel"><p class="eyebrow">A practical starting point</p><dl><div><dt>One application</dt><dd>One repository and an agreed staging target</dd></div><div><dt>Visible checks</dt><dd>Build, test, health and rollback criteria</dd></div><div><dt>A usable handover</dt><dd>Commands, limits and a release runbook</dd></div></dl><p class="panel-note">Offered independently by Oluwatoyin Balogun. This pilot is not a production-proven service or a claim of customer outcomes. Scope, availability and pricing are agreed before work begins.</p></aside>
+</div></section>
+<section class="section wrap" id="scope"><div class="section-heading"><p class="eyebrow">01 / The pilot</p><h2>Small scope. Explicit acceptance.</h2><p>For a small team with an existing app and a manual or inconsistent release process.</p></div>
+<div class="case-study"><div class="case-intro"><h3>What the engagement covers</h3><ol class="service-list"><li>Review one application's build and test commands.</li><li>Prepare Dockerfile and Docker Compose configuration.</li><li>Set up GitHub Actions build and test gates with agreed permissions.</li><li>Rehearse a release to an isolated staging target and check health.</li><li>Rehearse a supported rollback and hand over a short runbook.</li></ol></div><div class="case-details"><h3>Agree the finish line first</h3><p>A clean checkout builds; a broken test blocks promotion; the agreed staging health check passes; the previous supported version can be restored; you can follow the handover commands.</p><p>You provide permission to work on the repository, an app that can be built and tested, and an approved staging environment. Hosting and third-party charges remain yours.</p><p class="context-note">Not included: feature development, Kubernetes or multi-service migrations, production operation/on-call, uptime guarantees, penetration testing or security certification. Database migrations, data recovery, secrets provisioning and compliance need separate assessment. A code rollback cannot undo data changes.</p></div></div>
+<p class="scope-note">No published price or delivery-time promise: both depend on the agreed app and acceptance checks. This is a planned independent pilot, not an agency team or an expert certification.</p>
+</section>
+<section class="experience-section" id="demo"><div class="wrap section"><div class="section-heading"><p class="eyebrow">02 / See the checks</p><h2>Try a failure. Keep the last good version.</h2><p><strong>Interactive simulation of release checks—not a live Docker/AWS deployment.</strong> The controls below run JavaScript contract checks in your browser. They do not run containers or GitHub Actions.</p></div>
+<div class="lab"><div><label for="candidate">Candidate response</label><select id="candidate"><option value="v2">v2 · healthy response</option><option value="broken">Broken · unhealthy response</option></select><div class="lab-actions"><button class="button button-dark" id="check" type="button">Run checks &amp; release</button><button class="button" id="rollback" type="button" disabled>Roll back to v1</button><button class="button" id="reset" type="button">Reset simulation</button></div></div><div><p class="eyebrow">Simulated running app</p><pre id="app-state">{"version":"v1","status":"ok"}</pre><p id="demo-status" role="status">Ready. v1 is the last known good version.</p></div></div>
+<details class="evidence" open><summary>Separate evidence: a real local Docker Compose run</summary><p>The downloadable Python standard-library sample was executed with Docker Compose on <time datetime="2026-11-01T20:10:13Z">1 November 2026 (20:10 UTC)</time>. Two contract tests passed for v1 and v2; an intentionally broken health contract returned exit code 1 and did not replace v1. Actual HTTP health checks confirmed v1 → v2 → v1, followed by cleanup of only the disposable project.</p><p>This proves a small local test gate and version-configuration rollback. Versions select a sample response inside one image; it is <strong>not immutable-image rollback, a cloud deployment, a GitHub Actions run or customer production evidence</strong>. The Python base-image tag is mutable; production delivery needs reviewed image pinning and app-specific checks.</p><div class="hero-actions"><a class="inline-link" href="demo/release-service-demo.zip" download>Download runnable sample (.zip)</a><a class="inline-link" href="demo/evidence.json">Read executed commands &amp; results</a><a class="inline-link" href="https://github.com/TYBies/TYBies.github.io/tree/main/services/demo/sample">Browse sample source</a></div><p>After extracting: run <code>python3 -m unittest -v</code> and <code>python3 verify.py</code> from the sample folder. Python and Docker Compose required; no cloud credentials. Read the included README before running.</p></details>
+</div></section>
+<section class="section wrap" id="enquiry"><div class="section-heading"><p class="eyebrow">03 / Project enquiry</p><h2>Start with the problem.</h2><p>Prepare a short brief, review it, then send it from your own email app. An enquiry is not a booking or a commitment.</p></div>
+<p id="privacy">This form does not submit or store your information on a server. It stays in your browser until you choose to copy, download or open a draft in your email app. Nothing is sent automatically: review and send it yourself. Do not include credentials, secrets or personal client data.</p>
+<noscript><p>The form needs JavaScript to prepare a brief. You can instead email <a class="inline-link" href="mailto:oluwatoyinbalogun583@gmail.com">oluwatoyinbalogun583@gmail.com</a> with a short description of your project.</p></noscript>
+<form id="enquiry-form" aria-describedby="privacy" onsubmit="return false">
+<div class="form-grid">
+<label>Name <span>(required)</span><input name="name" required maxlength="100" autocomplete="name"></label>
+<label>Business email <span>(required)</span><input name="email" type="email" required maxlength="150" autocomplete="email"></label>
+<label>Business / organisation <span>(optional)</span><input name="business" maxlength="120" autocomplete="organization"></label>
+<label>Project URL <span>(optional, public links only)</span><input name="url" type="url" maxlength="250" placeholder="https://example.com"></label>
+<label class="wide">What is the problem? <span>(required)</span><textarea name="problem" required maxlength="800" rows="4"></textarea></label>
+<label>Current stack <span>(required)</span><input name="stack" required maxlength="180" placeholder="App language, hosting, current release process"></label>
+<label>Desired outcome <span>(required)</span><input name="outcome" required maxlength="300"></label>
+<label>Preferred date <span>(optional, not a booking)</span><input name="date" type="date"></label>
+<label>Budget context <span>(optional)</span><select name="budget"><option value="Not specified">Prefer to discuss</option><option>Budget not yet agreed</option><option>Budget available; scope first</option></select></label>
+</div>
+<div class="lab-actions"><button class="button button-dark" type="button" id="email-draft" disabled>Open email draft</button><button class="button" type="button" id="copy-brief" disabled>Copy project brief</button><button class="button" type="button" id="download-brief" disabled>Download enquiry</button></div>
+<p id="form-status" role="status">Nothing has been sent.</p><label for="brief-preview">Review your prepared brief</label><textarea id="brief-preview" readonly rows="8" placeholder="Your brief will appear here after validation."></textarea>
+</form>
+<p class="scope-note">No email app? Copy the brief and send it to <a class="inline-link" href="mailto:oluwatoyinbalogun583@gmail.com">oluwatoyinbalogun583@gmail.com</a>. You can also <a class="inline-link" href="https://www.linkedin.com/in/oluwatoyin-balogun-a8375a89/">connect on LinkedIn</a>. Opening a draft is not proof of delivery.</p>
+</section>
+</main><footer class="wrap footer"><p>Oluwatoyin Balogun <span>· Independent service pilot</span></p><a href="../">Back to portfolio ↗</a></footer>
+</body></html>

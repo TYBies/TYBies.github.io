@@ -1,0 +1,78 @@
+{
+  "executed_at_utc": "2026-11-01T20:10:13.366011+00:00",
+  "environment": "Local Docker Compose; no cloud or GitHub Actions execution",
+  "events": [
+    {
+      "command": "APP_VERSION=v1 docker compose -p <unique-project> build",
+      "exit_code": 0
+    },
+    {
+      "command": "APP_VERSION=v1 docker compose -p <unique-project> run --rm --no-deps app python -m unittest -v",
+      "exit_code": 0
+    },
+    {
+      "command": "APP_VERSION=v1 docker compose -p <unique-project> up -d --wait --wait-timeout 45",
+      "exit_code": 0
+    },
+    {
+      "command": "APP_VERSION=v1 docker compose -p <unique-project> port app 8080",
+      "exit_code": 0
+    },
+    {
+      "http_health": {
+        "version": "v1",
+        "status": "ok"
+      }
+    },
+    {
+      "command": "APP_VERSION=broken docker compose -p <unique-project> run --rm --no-deps app python -m unittest -v",
+      "exit_code": 1
+    },
+    {
+      "command": "APP_VERSION=v1 docker compose -p <unique-project> port app 8080",
+      "exit_code": 0
+    },
+    {
+      "failed_candidate_blocked": true
+    },
+    {
+      "command": "APP_VERSION=v2 docker compose -p <unique-project> run --rm --no-deps app python -m unittest -v",
+      "exit_code": 0
+    },
+    {
+      "command": "APP_VERSION=v2 docker compose -p <unique-project> up -d --wait --wait-timeout 45",
+      "exit_code": 0
+    },
+    {
+      "command": "APP_VERSION=v2 docker compose -p <unique-project> port app 8080",
+      "exit_code": 0
+    },
+    {
+      "http_health": {
+        "version": "v2",
+        "status": "ok"
+      }
+    },
+    {
+      "command": "APP_VERSION=v1 docker compose -p <unique-project> up -d --wait --wait-timeout 45",
+      "exit_code": 0
+    },
+    {
+      "command": "APP_VERSION=v1 docker compose -p <unique-project> port app 8080",
+      "exit_code": 0
+    },
+    {
+      "http_health": {
+        "version": "v1",
+        "status": "ok"
+      }
+    },
+    {
+      "rollback_verified": true
+    },
+    {
+      "command": "APP_VERSION=v1 docker compose -p <unique-project> down --remove-orphans --rmi local",
+      "exit_code": 0
+    }
+  ]
+}

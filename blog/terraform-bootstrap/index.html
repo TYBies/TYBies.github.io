@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terraform’s chicken-and-egg problem: bootstrapping remote state | Oluwatoyin Balogun</title><meta name="description" content="Why S3 state needs a bootstrap boundary: two Terraform roots, native locking, safe state migration and an explicit initial trust decision."><meta name="theme-color" content="#142b39"><link rel="icon" href="data:,">
+<meta name="author" content="Oluwatoyin Balogun"><meta property="article:published_time" content="2026-11-02">
+<link rel="canonical" href="https://tybies.github.io/blog/terraform-bootstrap/"><meta property="og:type" content="article"><meta property="og:title" content="Terraform’s chicken-and-egg problem: bootstrapping remote state"><meta property="og:description" content="Why S3 state needs a bootstrap boundary: two Terraform roots, native locking, safe state migration and an explicit initial trust decision."><meta property="og:url" content="https://tybies.github.io/blog/terraform-bootstrap/">
+<link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/blog/blog.css"><script src="/script.js" defer></script>
+</head><body><a class="skip-link" href="#main">Skip to content</a>
+<header class="site-header"><div class="wrap header-inner"><a class="brand" href="/"><span class="monogram" aria-hidden="true">OB</span><span>Oluwatoyin Balogun</span></a><button class="menu-toggle" aria-expanded="false" aria-controls="navigation" hidden>Menu <span aria-hidden="true">+</span></button><nav id="navigation" aria-label="Main navigation"><a href="/">Portfolio</a><a href="/blog/" aria-current="true">Engineering Notes</a><a href="/services/">Services</a><a href="/de/" lang="de">Deutsch · Portfolio</a></nav></div></header>
+<main id="main"><article>
+<header class="note-header wrap"><a class="back-link" href="/blog/">← Engineering Notes</a><p class="eyebrow">Infrastructure / Terraform / AWS</p><h1>Terraform’s chicken-and-egg problem: bootstrapping remote state</h1><p class="note-deck">Before Terraform can store state in S3, the bucket has to exist. The way out is a small, deliberate bootstrap boundary.</p><p class="note-meta">By Oluwatoyin Balogun · <time datetime="2026-11-02">2 November 2026</time> · Technical walkthrough</p></header>
+<div class="reading-layout wrap"><aside class="contents"><p class="eyebrow">In this note</p><nav aria-label="Article contents"><a href="#cycle">The dependency cycle</a><a href="#bootstrap">Create the foundation</a><a href="#workload">Connect the workload</a><a href="#protect">Protect both states</a><a href="#identity">The identity cycle</a><a href="#sources">Sources</a></nav></aside>
+<div class="prose"><p>In my DataScientest bootcamp project, I worked on Terraform infrastructure and S3 remote state. That combination raises a useful question: if Terraform creates the infrastructure, what creates the place where Terraform keeps its state?</p>
+<p>This is an illustrative pattern, not a reconstruction of that project’s deployment history. The examples below are newly written and intentionally separate the state foundation from the application. They do not establish how the training environment was deployed or locked.</p>
+<section id="cycle"><h2>The bucket cannot create itself first</h2><p>With an S3 backend, <code>terraform init</code> initializes access to an <em>existing</em> bucket. Backend initialization happens before a resource plan or apply. Putting the bucket resource into the same root does not make Terraform create it before initialization.<a class="citation" href="#source-1" aria-label="Source 1">[1]</a><a class="citation" href="#source-2" aria-label="Source 2">[2]</a></p><p>Nor can the backend use <code>aws_s3_bucket.state.id</code>: backend configuration cannot refer to resource attributes or input variables. A resource <code>depends_on</code> cannot reorder backend initialization.<a class="citation" href="#source-3" aria-label="Source 3">[3]</a></p>
+<figure class="sequence"><figcaption>Break the cycle with two independent roots</figcaption><ol><li><strong>Trusted operator</strong><span>Existing identity with approved permissions</span></li><li><strong>bootstrap/ → local state</strong><span>Creates and protects the S3 bucket</span></li><li><strong>workload/ → S3 state</strong><span>Initializes against the bucket that now exists</span></li></ol></figure></section>
+<section id="bootstrap"><h2>1. Create the foundation separately</h2><p>Give <code>bootstrap/</code> its own root configuration. Without a backend block, Terraform uses local state.<a class="citation" href="#source-3" aria-label="Source 3">[3]</a> Keep this root small: the state bucket should outlive the application it supports.</p><p>Save this as <code>bootstrap/main.tf</code>. Supply a globally unique bucket name you control; the default region is Frankfurt. The AWS provider is pinned to the version used for this example’s validation, not presented as the latest release.</p>
+<figure class="code-example"><figcaption>bootstrap/main.tf — independent local-state root</figcaption><pre tabindex="0" aria-label="bootstrap/main.tf — independent local-state root; scroll horizontally if needed"><code>terraform {
+  required_version = &quot;&gt;= 1.10, &lt; 2.0&quot;
+  required_providers {
+    aws = {
+      source  = &quot;hashicorp/aws&quot;
+      version = &quot;= 5.100.0&quot;
+    }
+  }
+  # No remote backend: this root starts with local state.
+}
+
+variable &quot;state_bucket_name&quot; {
+  description = &quot;Choose a globally unique S3 bucket name you control.&quot;
+  type        = string
+}
+
+variable &quot;aws_region&quot; {
+  description = &quot;Region for the state bucket.&quot;
+  type        = string
+  default     = &quot;eu-central-1&quot;
+}
+
+provider &quot;aws&quot; {
+  region = var.aws_region
+}
+
+resource &quot;aws_s3_bucket&quot; &quot;state&quot; {
+  bucket        = var.state_bucket_name
+  force_destroy = false
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource &quot;aws_s3_bucket_versioning&quot; &quot;state&quot; {
+  bucket = aws_s3_bucket.state.id
+  versioning_configuration {
+    status = &quot;Enabled&quot;
+  }
+}
+
+resource &quot;aws_s3_bucket_server_side_encryption_configuration&quot; &quot;state&quot; {
+  bucket = aws_s3_bucket.state.id
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm = &quot;AES256&quot;
+    }
+  }
+}
+
+resource &quot;aws_s3_bucket_public_access_block&quot; &quot;state&quot; {
+  bucket                  = aws_s3_bucket.state.id
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}</code></pre></figure>
+<p>Before any deployment, an authorized operator must review the account, region, bucket name, permissions and costs, then initialize, plan and apply <em>this root</em>. Those cloud operations are not part of this article’s verification. Complete the protection resources before allowing workload writes.</p></section>
+<section id="workload"><h2>2. Point the workload at that bucket</h2><p>Save this separate configuration as <code>workload/main.tf</code>. It defines only the backend boundary; add your application resources and providers here, not the state bucket.</p>
+<figure class="code-example"><figcaption>workload/main.tf — remote-state root</figcaption><pre tabindex="0" aria-label="workload/main.tf — remote-state root; scroll horizontally if needed"><code>terraform {
+  required_version = &quot;&gt;= 1.10, &lt; 2.0&quot;
+  backend &quot;s3&quot; {
+    # Supply bucket at init, after bootstrap has created it.
+    key          = &quot;workload/dev/terraform.tfstate&quot;
+    region       = &quot;eu-central-1&quot;
+    encrypt      = true
+    use_lockfile = true
+  }
+}
+# Add application infrastructure and its providers in this root.</code></pre></figure>
+<p>Native S3 locking arrived in Terraform 1.10; <code>use_lockfile = true</code> opts in. Current documentation deprecates DynamoDB-based locking, so it is not the default for this new example. Coordinate older clients before changing an existing team’s lock mechanism.<a class="citation" href="#source-4" aria-label="Source 4">[4]</a><a class="citation" href="#source-1" aria-label="Source 1">[1]</a></p>
+<p>Only after the bucket exists, initialize the workload with the same bucket name and region. This command contacts AWS; it was <strong>not run</strong> for this article:</p>
+<figure class="code-example"><figcaption>Deployment step — illustrative, not executed</figcaption><pre tabindex="0" aria-label="Deployment step — illustrative, not executed; scroll horizontally if needed"><code>terraform -chdir=workload init \
+  -backend-config=&quot;bucket=REPLACE_WITH_YOUR_EXISTING_BUCKET&quot;</code></pre></figure>
+<p>The backend authenticates separately from the AWS provider. Provider settings do not automatically configure backend credentials or role assumption. Use an approved short-lived credential mechanism for each; never embed access keys in HCL or backend arguments.<a class="citation" href="#source-1" aria-label="Source 1">[1]</a><a class="citation" href="#source-3" aria-label="Source 3">[3]</a></p></section>
+<section id="protect"><h2>3. Keep the two states straight</h2><p><strong>Initializing <code>workload/</code> does not migrate <code>bootstrap/</code>.</strong> The bootstrap state still owns the bucket and remains local. Restrict access, keep an encrypted backup outside the repository, and nominate an owner before treating it as a shared foundation.</p><p>Optionally move bootstrap itself to remote state later: back up its state, add an S3 backend in that <em>same bootstrap root</em> using a distinct key such as <code>bootstrap/terraform.tfstate</code>, then run <code>terraform -chdir=bootstrap init -migrate-state</code>. Review the migration prompts and verify the destination state and resource addresses before retiring the local copy. <code>-reconfigure</code> is not an equivalent migration flag: it prevents migration of existing state.<a class="citation" href="#source-2" aria-label="Source 2">[2]</a><a class="citation" href="#source-3" aria-label="Source 3">[3]</a></p>
+<ul><li><strong>Recovery:</strong> versioning helps recover older objects; it is not a tested recovery procedure. Retained versions and S3 requests also have costs.</li><li><strong>Access:</strong> scope bucket listing and state reads/writes to the required paths. The lock object additionally needs read, write and delete permissions. Do not give routine workload automation bucket-administration rights.<a class="citation" href="#source-1" aria-label="Source 1">[1]</a></li><li><strong>Protection:</strong> encryption and public-access blocking are a baseline, not a complete security policy. Review TLS enforcement and any KMS requirements. <code>prevent_destroy</code> is a Terraform guardrail, not an AWS deletion lock; removing its resource configuration removes that protection.<a class="citation" href="#source-5" aria-label="Source 5">[5]</a></li><li><strong>Repository hygiene:</strong> exclude state, backups, saved plans, credentials and <code>.terraform/</code>. Plans can contain sensitive backend configuration. Commit the provider dependency lock file, <code>.terraform.lock.hcl</code>, instead.<a class="citation" href="#source-3" aria-label="Source 3">[3]</a><a class="citation" href="#source-2" aria-label="Source 2">[2]</a></li></ul></section>
+<section id="identity"><h2>There is a second chicken-and-egg problem</h2><p>A GitHub Actions job cannot assume an IAM role that does not yet exist. An already trusted operator identity must establish the OIDC provider and role—or reuse an approved existing provider—before the workload pipeline relies on them. Restrict trust to the intended repository and branch or environment, check the actual subject-claim format, and validate the audience. OIDC removes the need for long-lived GitHub AWS secrets, not the need for an initial trust decision.<a class="citation" href="#source-6" aria-label="Source 6">[6]</a></p></section>
+<section id="checks"><h2>What was checked, without deploying</h2><p>The two examples passed HCL parsing, <code>terraform fmt -check</code> and <code>terraform validate</code> using Terraform 1.10.5; bootstrap validation used the downloaded, HashiCorp-signed AWS provider 5.100.0. These are the tested versions, not an upgrade recommendation.</p>
+<figure class="code-example"><figcaption>Local checks — provider download requires internet</figcaption><pre tabindex="0" aria-label="Local checks — provider download requires internet; scroll horizontally if needed"><code>terraform fmt -check -recursive
+terraform -chdir=bootstrap init -backend=false -input=false
+terraform -chdir=bootstrap validate
+terraform -chdir=workload init -backend=false -input=false
+terraform -chdir=workload validate</code></pre></figure>
+<p>Checks ran with isolated credential discovery and backend initialization disabled. <strong>No AWS deployment, plan, apply or state migration was performed.</strong> Validation does not prove IAM access, bucket availability or recovery behavior.</p><p>My takeaway: bootstrap is not a shortcut around infrastructure as code. It is an explicit boundary for the resources and trust that ordinary automation needs before it can start.</p></section>
+<aside class="next-note"><h2>From infrastructure to delivery</h2><p><a href="/#work">See my Terraform and Kubernetes training work</a>, or explore the <a href="/services/">one-app Docker Compose and GitHub Actions service pilot</a>. The pilot has its own scope; this article is not an offer of managed Terraform operations.</p></aside>
+<section id="sources" class="sources"><h2>Sources</h2><p>Official documentation checked on <time datetime="2026-11-02">2 November 2026</time>.</p><ol><li id="source-1"><a href="https://developer.hashicorp.com/terraform/language/backend/s3">HashiCorp: S3 backend, locking and permissions</a></li><li id="source-2"><a href="https://developer.hashicorp.com/terraform/cli/commands/init">HashiCorp: terraform init and migration flags</a></li><li id="source-3"><a href="https://developer.hashicorp.com/terraform/language/backend">HashiCorp: backend configuration and sensitive data</a></li><li id="source-4"><a href="https://github.com/hashicorp/terraform/releases/tag/v1.10.0">HashiCorp: Terraform 1.10.0 release notes</a></li><li id="source-5"><a href="https://developer.hashicorp.com/terraform/language/meta-arguments/lifecycle">HashiCorp: lifecycle and prevent_destroy</a></li><li id="source-6"><a href="https://docs.github.com/en/actions/how-tos/secure-your-work/security-harden-deployments/oidc-in-aws">GitHub: configuring OIDC in AWS</a></li></ol></section></div></div></article></main><footer class="wrap footer"><p>Oluwatoyin Balogun <span>· Engineering Notes</span></p><a href="/">Back to portfolio ↗</a></footer></body></html>

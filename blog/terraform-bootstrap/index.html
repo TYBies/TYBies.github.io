@@ -1,9 +1,24 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Terraform’s chicken-and-egg problem: bootstrapping remote state | Oluwatoyin Balogun</title><meta name="description" content="Why S3 state needs a bootstrap boundary: two Terraform roots, native locking, safe state migration and an explicit initial trust decision."><meta name="theme-color" content="#142b39"><link rel="icon" href="data:,">
-<meta name="author" content="Oluwatoyin Balogun"><meta property="article:published_time" content="2026-11-02">
-<link rel="canonical" href="https://tybies.github.io/blog/terraform-bootstrap/"><meta property="og:type" content="article"><meta property="og:title" content="Terraform’s chicken-and-egg problem: bootstrapping remote state"><meta property="og:description" content="Why S3 state needs a bootstrap boundary: two Terraform roots, native locking, safe state migration and an explicit initial trust decision."><meta property="og:url" content="https://tybies.github.io/blog/terraform-bootstrap/">
+<title>Terraform S3 Remote State Bootstrap | Oluwatoyin Balogun</title><meta name="theme-color" content="#142b39"><link rel="icon" href="data:,">
+<meta name="author" content="Oluwatoyin Balogun">
+
 <link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/blog/blog.css"><script src="/script.js" defer></script>
+
+<meta name="description" content="Why S3 state needs a bootstrap boundary: two Terraform roots, native locking, safe state migration and an explicit initial trust decision.">
+<link rel="canonical" href="https://tybies.github.io/blog/terraform-bootstrap/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Terraform S3 Remote State Bootstrap | Oluwatoyin Balogun">
+<meta property="og:description" content="Why S3 state needs a bootstrap boundary: two Terraform roots, native locking, safe state migration and an explicit initial trust decision.">
+<meta property="og:url" content="https://tybies.github.io/blog/terraform-bootstrap/">
+<meta property="og:site_name" content="Oluwatoyin Balogun">
+<meta property="og:locale" content="en_GB">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Terraform S3 Remote State Bootstrap | Oluwatoyin Balogun">
+<meta name="twitter:description" content="Why S3 state needs a bootstrap boundary: two Terraform roots, native locking, safe state migration and an explicit initial trust decision.">
+<meta property="article:published_time" content="2026-11-02T19:48:06Z">
+<meta property="article:modified_time" content="2026-11-02T19:48:06Z">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "Terraform’s chicken-and-egg problem: bootstrapping remote state", "description": "Why S3 state needs a bootstrap boundary: two Terraform roots, native locking, safe state migration and an explicit initial trust decision.", "mainEntityOfPage": "https://tybies.github.io/blog/terraform-bootstrap/", "url": "https://tybies.github.io/blog/terraform-bootstrap/", "inLanguage": "en", "author": {"@type": "Person", "name": "Oluwatoyin Balogun", "url": "https://tybies.github.io/"}, "datePublished": "2026-11-02T19:48:06Z", "dateModified": "2026-11-02T19:48:06Z"}</script>
 </head><body><a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap header-inner"><a class="brand" href="/"><span class="monogram" aria-hidden="true">OB</span><span>Oluwatoyin Balogun</span></a><button class="menu-toggle" aria-expanded="false" aria-controls="navigation" hidden>Menu <span aria-hidden="true">+</span></button><nav id="navigation" aria-label="Main navigation"><a href="/">Portfolio</a><a href="/blog/" aria-current="true">Engineering Notes</a><a href="/services/">Services</a><a href="/de/" lang="de">Deutsch · Portfolio</a></nav></div></header>
 <main id="main"><article>

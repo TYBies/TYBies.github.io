@@ -1,9 +1,24 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OIDC, GitHub Actions and Argo CD: which system authenticates where? | Oluwatoyin Balogun</title><meta name="description" content="One delivery pipeline, several trust boundaries. GitHub Actions, Git access, Kubernetes access and human login do not share one credential."><meta name="theme-color" content="#142b39"><link rel="icon" href="data:,">
-<meta name="author" content="Oluwatoyin Balogun"><meta property="article:published_time" content="2026-11-02">
-<link rel="canonical" href="https://tybies.github.io/blog/oidc-github-argocd-aws/"><meta property="og:type" content="article"><meta property="og:title" content="OIDC, GitHub Actions and Argo CD: which system authenticates where?"><meta property="og:description" content="One delivery pipeline, several trust boundaries. GitHub Actions, Git access, Kubernetes access and human login do not share one credential."><meta property="og:url" content="https://tybies.github.io/blog/oidc-github-argocd-aws/">
+<title>OIDC, GitHub Actions &amp; Argo CD Authentication | Oluwatoyin Balogun</title><meta name="theme-color" content="#142b39"><link rel="icon" href="data:,">
+<meta name="author" content="Oluwatoyin Balogun">
+
 <link rel="stylesheet" href="/styles.css"><link rel="stylesheet" href="/blog/blog.css"><script src="/script.js" defer></script>
+
+<meta name="description" content="One delivery pipeline, several trust boundaries. GitHub Actions, Git access, Kubernetes access and human login do not share one credential.">
+<link rel="canonical" href="https://tybies.github.io/blog/oidc-github-argocd-aws/">
+<meta property="og:type" content="article">
+<meta property="og:title" content="OIDC, GitHub Actions &amp; Argo CD Authentication | Oluwatoyin Balogun">
+<meta property="og:description" content="One delivery pipeline, several trust boundaries. GitHub Actions, Git access, Kubernetes access and human login do not share one credential.">
+<meta property="og:url" content="https://tybies.github.io/blog/oidc-github-argocd-aws/">
+<meta property="og:site_name" content="Oluwatoyin Balogun">
+<meta property="og:locale" content="en_GB">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="OIDC, GitHub Actions &amp; Argo CD Authentication | Oluwatoyin Balogun">
+<meta name="twitter:description" content="One delivery pipeline, several trust boundaries. GitHub Actions, Git access, Kubernetes access and human login do not share one credential.">
+<meta property="article:published_time" content="2026-11-02T20:02:21Z">
+<meta property="article:modified_time" content="2026-11-02T20:02:21Z">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Article", "headline": "OIDC, GitHub Actions and Argo CD: which system authenticates where?", "description": "One delivery pipeline, several trust boundaries. GitHub Actions, Git access, Kubernetes access and human login do not share one credential.", "mainEntityOfPage": "https://tybies.github.io/blog/oidc-github-argocd-aws/", "url": "https://tybies.github.io/blog/oidc-github-argocd-aws/", "inLanguage": "en", "author": {"@type": "Person", "name": "Oluwatoyin Balogun", "url": "https://tybies.github.io/"}, "datePublished": "2026-11-02T20:02:21Z", "dateModified": "2026-11-02T20:02:21Z"}</script>
 </head><body><a class="skip-link" href="#main">Skip to content</a>
 <header class="site-header"><div class="wrap header-inner"><a class="brand" href="/"><span class="monogram" aria-hidden="true">OB</span><span>Oluwatoyin Balogun</span></a><button class="menu-toggle" aria-expanded="false" aria-controls="navigation" hidden>Menu <span aria-hidden="true">+</span></button><nav id="navigation" aria-label="Main navigation"><a href="/">Portfolio</a><a href="/blog/" aria-current="true">Engineering Notes</a><a href="/services/">Services</a><a href="/de/" lang="de">Deutsch · Portfolio</a></nav></div></header>
 <main id="main"><article><header class="note-header wrap"><a class="back-link" href="/blog/">← Engineering Notes</a><p class="eyebrow">Identity / GitHub Actions / Kubernetes</p><h1>OIDC, GitHub Actions and Argo CD: which system authenticates where?</h1><p class="note-deck">One delivery pipeline, several trust boundaries. GitHub Actions, Git access, Kubernetes access and human login do not share one credential.</p><p class="note-meta">By Oluwatoyin Balogun · <time datetime="2026-11-02">2 November 2026</time> · Technical walkthrough</p></header><div class="reading-layout wrap"><aside class="contents"><p class="eyebrow">In this note</p><nav aria-label="Article contents"><a href="#map">The four paths</a><a href="#actions">Actions → AWS</a><a href="#repository">Argo CD → GitHub</a><a href="#cluster">Argo CD → Kubernetes</a><a href="#sso">Human SSO</a><a href="#bootstrap">Bootstrap trust</a><a href="#sources">Sources</a></nav></aside><div class="prose"><p>“Argo CD uses OIDC to authenticate to GitHub and AWS” sounds like a neat explanation. It combines several different connections, though. GitHub Actions can exchange a GitHub-issued identity token for AWS credentials. Argo CD reading a private GitHub repository is a separate operation, with separate credentials.<a class="citation" href="#source-1" aria-label="Source 1">[1]</a><a class="citation" href="#source-2" aria-label="Source 2">[2]</a></p>

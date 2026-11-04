@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://tybies.github.io/</loc></url>
+  <url><loc>https://tybies.github.io/blog/</loc></url>
+  <url><loc>https://tybies.github.io/blog/github-actions-argocd-pipeline/</loc></url>
+  <url><loc>https://tybies.github.io/blog/oidc-github-argocd-aws/</loc></url>
+  <url><loc>https://tybies.github.io/blog/terraform-bootstrap/</loc></url>
+  <url><loc>https://tybies.github.io/de/</loc></url>
+  <url><loc>https://tybies.github.io/services/</loc></url>
+</urlset>
